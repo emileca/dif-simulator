@@ -1,7 +1,7 @@
 # User guide
 
 <div style="margin:0.5em 0 1em 0;">
-  <img src="logo5.png" alt="logo" style="max-width:450px;">
+  <img src="logo2.png" alt="logo" style="max-width:450px;">
 </div>
 
 
