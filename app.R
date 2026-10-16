@@ -259,8 +259,7 @@ ui <- fluidPage(
                  h4("Simulated item parameters"),
                  tableOutput("param_table"),
                  plotOutput("icc_plot"),
-                 sliderInput("item_curves", "Item to display (ICC by group)",
-                             1, 40, 1, step = 1),
+                 uiOutput("item_curves_ui"),
                  plotOutput("score_plot"),
                  plotOutput("scatter_plot")
         ),
@@ -347,9 +346,6 @@ server <- function(input, output, session) {
                                  input$type_dif, input$delta_b, input$delta_a)
       Data <- gen_responses(params, input$n_ref, input$n_foc,
                             input$mu_foc, input$seed)
-      # Étendue du slider d'items selon le nombre d'items
-      updateSliderInput(session, "item_curves", max = n_items,
-                        value = min(input$item_curves, n_items))
       list(params = params, Data = Data, dif_items = dif_items,
            steps = NULL, n_removed = 0,
            simulated = TRUE, item_type = "dicho")
@@ -363,8 +359,6 @@ server <- function(input, output, session) {
                            input$delta_a_poly,
                            input$n_ref_poly, input$n_foc_poly,
                            input$mu_foc_poly, input$ncat)
-      updateSliderInput(session, "item_curves", max = n_items,
-                        value = min(input$item_curves, n_items))
       list(params = out$params, Data = out$Data, dif_items = out$dif_items,
            steps = out$steps, ncat = out$ncat, n_removed = 0,
            simulated = TRUE, item_type = "poly")
@@ -401,8 +395,6 @@ server <- function(input, output, session) {
       }
       Data <- df
       Data$group <- grp
-      updateSliderInput(session, "item_curves", max = length(items),
-                        value = min(input$item_curves, length(items)))
       list(params = NULL, Data = Data, dif_items = integer(0),
            steps = NULL, n_removed = n_removed,
            simulated = FALSE, item_type = input$item_type_upload)
@@ -446,10 +438,21 @@ server <- function(input, output, session) {
     }
   }, rownames = FALSE)
   
+  # Menu déroulant de sélection d'item (remplace l'ancien slider) :
+  # mis à jour à chaque génération selon le nombre d'items de la session
+  output$item_curves_ui <- renderUI({
+    d <- clean_data()
+    n_items <- if (d$simulated) nrow(d$params) else sum(names(d$Data) != "group")
+    sel <- if (!is.null(input$item_curves) && as.integer(input$item_curves) %in% 1:n_items)
+      as.integer(input$item_curves) else 1
+    selectInput("item_curves", "Item to display (ICC by group)",
+                choices = 1:n_items, selected = sel)
+  })
+  
   output$icc_plot <- renderPlot({
     d <- clean_data()
     if (!d$simulated) return(invisible(NULL))
-    i <- input$item_curves
+    i <- as.integer(input$item_curves)
     p <- d$params[i, ]
     th <- seq(-4, 4, length.out = 200)
     
