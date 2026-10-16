@@ -15,10 +15,6 @@
 #     0. You just DO WHAT THE F**K YOU WANT TO.
 # =========================================================================
 
-# Ajouter un code pour ajouter des données continue, ensuite, voir si on peut
-# ajouter une deuxième variable pour éventuellement produire des graphique 
-# DAG
-
 library(shiny)
 library(difR)
 library(markdown)
@@ -72,8 +68,9 @@ gen_poly_data <- function(n_items, seed, dif_items, type_dif, delta_b, delta_a,
   set.seed(seed)
   a <- round(runif(n_items, 0.6, 1.6), 2)            # pentes
   b <- round(seq(-1.5, 1.5, length.out = n_items), 2) # difficultés
-  # Seuils de catégories : répartis autour de b, décroissants (convention GRM)
-  steps <- round(seq(1.2, -1.2, length.out = ncat - 1), 2)
+  # Seuils de catégories : répartis autour de b, croissants (convention GRM :
+  # pour que P(X >= 1) >= P(X >= 2) >= ..., il faut s_1 < s_2 < ...)
+  steps <- round(seq(-1.2, 1.2, length.out = ncat - 1), 2)
   a_foc <- a; b_foc <- b
   for (i in dif_items) {
     if (type_dif %in% c("uniforme", "mixte")) b_foc[i] <- b[i] + delta_b
@@ -469,30 +466,35 @@ server <- function(input, output, session) {
       legend("topleft", c("Reference group", "Focal group"),
              col = c("steelblue", "firebrick"), lwd = 2, bty = "n")
     } else {
-      # GRM : courbes de catégories cumulées P(X >= k), par groupe
+      # GRM : toutes les courbes dans un seul graphique
+      # Couleur = catégorie (comme plot(grm) de ltm), style = groupe
+      # (plein = référence, pointillé = focal)
       steps <- d$steps   # seuils k = 1 ... ncat-1
       thr_ref <- p$b_ref + steps
       thr_foc <- p$b_foc + steps
-      cols <- c("steelblue", "firebrick")
-      plot(th, plogis(p$a_ref * (th - thr_ref[1])), type = "l", lwd = 2,
-           col = cols[1], ylim = c(0, 1), xlab = "Theta (ability)",
-           ylab = "P(score >= category)",
-           main = sprintf("%s (GRM) — %s", p$item,
-                          if (p$DIF) paste("item with DIF (", p$type, ")") else "item without DIF"))
-      if (length(steps) > 1) {
-        for (k in 2:length(steps))
-          lines(th, plogis(p$a_ref * (th - thr_ref[k])), col = cols[1], lwd = 2)
-      }
-      lines(th, plogis(p$a_foc * (th - thr_foc[1])), col = cols[2], lwd = 2, lty = 2)
-      if (length(steps) > 1) {
-        for (k in 2:length(steps))
-          lines(th, plogis(p$a_foc * (th - thr_foc[k])), col = cols[2], lwd = 2, lty = 2)
-      }
+      # Courbes cumulées par groupe (matrices 200 x (ncat-1))
+      cum_ref <- sapply(thr_ref, function(bk) plogis(p$a_ref * (th - bk)))
+      cum_foc <- sapply(thr_foc, function(bk) plogis(p$a_foc * (th - bk)))
+      # Probabilités par catégorie : P(X=k) = cumulée_k - cumulée_{k+1}
+      K <- length(steps) + 1
+      cat_ref <- cbind(1 - cum_ref[, 1], if (K > 2) cum_ref[, 1:(K-2)] - cum_ref[, 2:(K-1)] else NULL, cum_ref[, K-1])
+      cat_foc <- cbind(1 - cum_foc[, 1], if (K > 2) cum_foc[, 1:(K-2)] - cum_foc[, 2:(K-1)] else NULL, cum_foc[, K-1])
+      # Palette : une couleur par catégorie (max 6 catégories)
+      cat_cols <- c("#000000", "#E41A1C", "#4DAF4A", "#377EB8", "#FF7F00", "#984EA3")
+      cat_cols <- cat_cols[1:K]
+      matplot(th, cat_ref, type = "l", lty = 1, lwd = 2, col = cat_cols,
+              ylim = c(0, 1), xlab = "Theta (ability)",
+              ylab = "Probability",
+              main = sprintf("%s (GRM) — %s", p$item,
+                             if (p$DIF) paste("item with DIF (", p$type, ")") else "item without DIF"))
+      matlines(th, cat_foc, lty = 2, lwd = 2, col = cat_cols)
+      # Légende : catégories en couleur + groupes en style de trait
       legend("topright",
-             c("Reference (solid)", "Focal (dashed)",
-               paste0("P(score >= ", seq_along(steps), ")")),
-             col = c(cols, rep("grey40", length(steps))),
-             lty = c(1, 2, rep(1, length(steps))), lwd = 2, bty = "n", cex = 0.85)
+             c(paste0("Category ", 0:(K-1)), "",
+               "Reference (solid)", "Focal (dashed)"),
+             col = c(cat_cols, "white", "grey40", "grey40"),
+             lty = c(rep(1, K), 0, 1, 2), lwd = 2, bty = "n", cex = 0.85,
+             seg.len = 2.5)
     }
   })
   
