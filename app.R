@@ -606,13 +606,13 @@ server <- function(input, output, session) {
   })
   
   # --- Documentation ----------------------------------------------------
-  # Le contenu vient d'un fichier externe "documentation.md", placé à côté
+  # Le contenu vient d'un fichier externe "README.md", placé à côté
   # du app.R. On le relit à chaque ouverture de l'onglet : il suffit de
   # modifier le fichier pour que l'app soit à jour (aucun redémarrage requis).
   # NB : la docu utilise des symboles Unicode (θ, ≥, sₖ...) au lieu de LaTeX
   # -> pas besoin de MathJax, un simple rendu markdown suffit, et ça règle
   # tous les problèmes d'affichage (chevauchements, backslashes perdus...).
-  docs_path <- "documentation.md"
+  docs_path <- "README.md"
   output$docs <- renderUI({
     if (!file.exists(docs_path)) {
       return(tags$p(style = "color:#B22222;",
