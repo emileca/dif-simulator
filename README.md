@@ -1,6 +1,6 @@
 # User guide
 
-![logo](www/logo2.png){width="450px"}
+![logo](www/logo2.png)
 
 ## About this project
 
