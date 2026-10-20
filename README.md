@@ -27,7 +27,7 @@ If you prefer to run the app on your own machine (e.g. for teaching offline, or 
 1. Make sure [R](https://www.r-project.org/) is installed (R ≥ 4.0 recommended).
 2. Clone or download this repository:
 ```bash
-git clone https://github.com/emilecaron/dif-simulator.git
+git clone https://github.com/emileca/dif-simulator.git
 ```
 3. In R (or RStudio), install the required packages and launch the app:
 ```
