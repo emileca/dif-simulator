@@ -8,6 +8,41 @@ This DIF simulator is developed at the **Université de Montréal** as a pedagog
 
 The project is developed in collaboration with the team behind [Shiny Item Analysis](https://shiny.cs.cas.cz/ShinyItemAnalysis/) : an open-source interactive platform for psychometric analysis maintained by our colleagues at Charles University (Prague).
 
+## Getting started
+
+There are two ways to use the app.
+
+#### Option 1 — Use the online version (no installation)
+
+Simply visit the hosted version:
+
+**https://emileca-dif-simulator.share.connect.posit.cloud/**
+
+Nothing to install — the app runs in your browser and is always up to date with the latest version deployed from the GitHub repository. This is the recommended option for students and occasional users.
+
+#### Option 2 — Run it locally from GitHub
+
+If you prefer to run the app on your own machine (e.g. for teaching offline, or to explore and modify the code):
+
+1. Make sure [R](https://www.r-project.org/) is installed (R ≥ 4.0 recommended).
+2. Clone or download this repository:
+```bash
+git clone https://github.com/emilecaron/dif-simulator.git
+```
+3. In R (or RStudio), install the required packages and launch the app:
+```
+install.packages(c("shiny", "difR", "markdown", "shinythemes"))
+
+# difR also needs VGAM (polytomous methods) and ltm (Lord, Raju)
+install.packages(c("VGAM", "ltm"))
+
+shiny::runApp("dif-simulator")
+```
+
+That's it — the app opens in your browser at a local address
+
+**Note**: the online version may occasionally lag one commit behind the GitHub repository when a new feature has just been pushed.
+
 ## What is DIF?
 
 **Differential Item Functioning (DIF)** occurs when respondents from different groups (e.g. reference vs. focal) with the *same level of ability* have different probabilities of answering an item correctly. A DIF item is biased in the sense that it measures something else (or in addition to) the intended trait.
@@ -56,7 +91,7 @@ respondents can be randomly split into two groups.
 
 ## Detection methods
 
-<table style="border-collapse:collapse; width:95%; margin:1em 0;">
+<table style="border-collapse:collapse; width:100%; margin:1em 0;">
   <thead>
     <tr style="background-color:#e8e8e8; color:#333333; text-align:left;">
       <th style="padding:8px; border:1px solid #ccc;">Method</th>
@@ -75,7 +110,7 @@ respondents can be randomly split into two groups.
     <tr><td style="padding:6px 8px; border:1px solid #ccc;">Std</td><td style="padding:6px 8px; border:1px solid #ccc;">Dichotomous</td><td style="padding:6px 8px; border:1px solid #ccc;">Uniform</td><td style="padding:6px 8px; border:1px solid #ccc;">Dorans &amp; Kulick (1986)</td></tr>
     <tr style="background-color:#f5f5f5;"><td style="padding:6px 8px; border:1px solid #ccc;">MantelPoly</td><td style="padding:6px 8px; border:1px solid #ccc;">Polytomous</td><td style="padding:6px 8px; border:1px solid #ccc;">Uniform &amp; non-uniform</td><td style="padding:6px 8px; border:1px solid #ccc;">Mantel (1963)</td></tr>
     <tr><td style="padding:6px 8px; border:1px solid #ccc;">Quade</td><td style="padding:6px 8px; border:1px solid #ccc;">Polytomous (experimentation with dichotomous)</td><td style="padding:6px 8px; border:1px solid #ccc;">Uniform &amp; non-uniform</td><td style="padding:6px 8px; border:1px solid #ccc;">Quade (1976)</td></tr>
-    <tr style="background-color:#f5f5f5;"><td style="padding:6px 8px; border:1px solid #ccc;">PolyLogistic</td><td style="padding:6px 8px; border:1px solid #ccc;">Polytomous</td><td style="padding:6px 8px; border:1px solid #ccc;">Uniform &amp; non-uniform</td><td style="padding:6px 8px; border:1px solid #ccc;"></td></tr>
+    <tr style="background-color:#f5f5f5;"><td style="padding:6px 8px; border:1px solid #ccc;">PolyLogistic</td><td style="padding:6px 8px; border:1px solid #ccc;">Polytomous</td><td style="padding:6px 8px; border:1px solid #ccc;">Uniform &amp; non-uniform</td><td style="padding:6px 8px; border:1px solid #ccc;">Kim, Cohen &amp; Park (1995)</td></tr>
   </tbody>
 </table>
 
@@ -98,23 +133,17 @@ respondents can be randomly split into two groups.
 
 ## Further reading
 
-- Drabinová, A., & Martinková, P. (2018). Detection of differential item functioning with nonlinear regression: Non-IRT approach differs from logistic regression. *Acta Polytechnica*, 58, 208–215. (A comparative view from the ShinyItemAnalysis team — connects the two platforms of this collaboration.)
-
-- Kim, S.-H., Cohen, A. S., & Park, T.-H. (1995). Detection of differential item functioning in multiple groups. *Journal of Educational Measurement*, 32, 261–276. (The generalized Lord's chi-square method included in difR.)
-
-- Magis, D., Béland, S., & Raiche, G. (2015). Essentials to know and practise about DIF: A multi-step approach. *Tutorials in Quantitative Methods for Psychology*, 11, 157–166. (A short practical tutorial that walks through DIF analysis step by step —  
-ideal companion to this app.)
-
+- Drabinová, A., & Martinková, P. (2018). Detection of differential item functioning with nonlinear regression: Non-IRT approach differs from logistic regression. *Acta Polytechnica*, 58, 208–215. 
+- Kim, S.-H., Cohen, A. S., & Park, T.-H. (1995). Detection of differential item functioning in multiple groups. *Journal of Educational Measurement*, 32, 261–276.
+- Magis, D., Béland, S., & Raiche, G. (2015). Essentials to know and practise about DIF: A multi-step approach. *Tutorials in Quantitative Methods for Psychology*, 11, 157–166.
 - Magis, D., Béland, S., Tuerlinckx, F., & De Boeck, P. (2010). A general framework and an R package for the detection of dichotomous differential item functioning. *Behavior Research Methods*, 42, 847–862. doi:10.3758/BRM.42.3.847  
-(The reference paper of the package — start here.)
-
-- Magis, D., Raiche, G., Béland, S., & Gérard, P. (2011). A generalized logistic regression procedure to detect differential item functioning among multiple groups. *Journal of Educational and Behavioral Statistics*, 36, 525–552. (The generalized logistic method implemented in difR for multiple groups.)
+- Magis, D., Raiche, G., Béland, S., & Gérard, P. (2011). A generalized logistic regression procedure to detect differential item functioning among multiple groups. *Journal of Educational and Behavioral Statistics*, 36, 525–552.
 
 ## Cite this project
 
 If you use this simulator in your teaching or research, please cite it as:
 
-Caron, É., Béland, S., & Hladká, A. (2026). *DIF Simulator with difR:  An interactive tool for teaching differential item functioning*  [Computer software]. GitHub. https://github.com/emilecaron/dif-simulator
+Caron, É., Béland, S., & Hladká, A. (2026). *DIF Simulator with difR: An interactive tool for teaching differential item functioning*  [Computer software]. GitHub. https://github.com/emilecaron/dif-simulator
 
 Or, in BibTeX format:
 
