@@ -299,6 +299,13 @@ ui <- fluidPage(
         ),
         tabPanel(tagList(icon("sliders"), "ICC playground"), value = "playground",
                  h4("Interactive item characteristic curves"),
+                 tags$p(style = "color:#666; font-size:0.9em;",
+                        "Want to go further with difR and DIF? You can also explore ",
+                        "our colleagues' ",
+                        tags$a(href = "https://shiny.cs.cas.cz/ShinyItemAnalysis/",
+                               "Shiny Item Analysis platform", target = "_blank"),
+                        ", which offers interactive tools for item analysis and DIF ",
+                        "detection with real datasets."),
                  uiOutput("play_item_ui"),
                  uiOutput("play_ui"),
                  plotOutput("play_plot"),
@@ -584,7 +591,12 @@ server <- function(input, output, session) {
              "as generated (ground truth). Solid blue = reference group. ",
              "A b-shift slides the focal curve left/right (uniform DIF); an ",
              "a-change alters its steepness and can make the curves cross ",
-             "(non-uniform DIF).")
+             "(non-uniform DIF)."),
+      tags$p(style = "color:#666; font-size:0.85em;",
+             "Tip: to practice with real data and more DIF methods, visit the ",
+             tags$a(href = "https://shiny.cs.cas.cz/ShinyItemAnalysis/",
+                    "Shiny Item Analysis platform", target = "_blank"),
+             " of our colleagues on the project.")
     )
   })
   
