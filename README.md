@@ -14,9 +14,9 @@ There are two ways to use the app.
 
 #### Option 1 — Use the online version (no installation)
 
-Simply visit the hosted version:
+Simply visit the hosted version on the Posit Cloud:
 
-**https://emileca-dif-simulator.share.connect.posit.cloud/**
+[dif-simulator.share.connect](https://emileca-dif-simulator.share.connect.posit.cloud/)
 
 Nothing to install — the app runs in your browser and is always up to date with the latest version deployed from the GitHub repository. This is the recommended option for students and occasional users.
 
