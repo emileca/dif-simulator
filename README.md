@@ -4,7 +4,7 @@
 
 ## About this project
 
-This DIF simulator is developed at the **Université de Montréal** as a pedagogical tool for teaching differential item functioning: it lets students and researchers generate simulated data with *known* DIF items, then watch how classical and modern detection methods perform against the ground truth.
+This DIF simulator is developed at the Université de Montréal as a pedagogical tool for teaching differential item functioning: it lets students and researchers generate simulated data with *known* DIF items, then watch how classical and modern detection methods perform against the ground truth.
 
 The project is developed in collaboration with the team behind [Shiny Item Analysis](https://shiny.cs.cas.cz/ShinyItemAnalysis/) : an open-source interactive platform for psychometric analysis maintained by our colleagues at Charles University (Prague).
 
