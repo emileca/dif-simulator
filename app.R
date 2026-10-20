@@ -15,6 +15,22 @@
 #     0. You just DO WHAT THE F**K YOU WANT TO.
 # =========================================================================
 
+# Ce fichier est conçu comme un app.R unique. Pour le déploiement (Posit
+# Cloud, shinyapps.io...), placez plutôt les lignes ci-dessous dans un
+# fichier global.R à côté du app.R — Shiny l'exécute au démarrage :
+#
+#   if (!requireNamespace("difR", quietly = TRUE) ||
+#       packageVersion("difR") < "6.1.0")
+#     install.packages("difR")
+#   if (!requireNamespace("VGAM", quietly = TRUE))
+#     install.packages("VGAM")
+#   if (!requireNamespace("ltm", quietly = TRUE))
+#     install.packages("ltm")
+#   library(shiny)
+#   library(difR)
+#   library(markdown)
+#   library(shinythemes)
+
 library(shiny)
 library(difR)
 library(markdown)
