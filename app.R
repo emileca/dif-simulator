@@ -116,9 +116,20 @@ try_call <- function(f, full, minimal) {
 
 # Lancement d'une méthode difR selon le type d'items
 run_difr_method <- function(meth, Data, alpha, purify, item_type) {
-  common <- list(Data = Data, group = "group", focal.name = 1,
-                 alpha = alpha, purify = purify)
-  minimal <- list(Data = Data, group = "group", focal.name = 1, alpha = alpha)
+  # Les méthodes polytomiques sont plus strictes sur l'argument "group" :
+  # difQuade exige un vecteur de même longueur que nrow(Data). On leur passe
+  # donc les items SANS la colonne group + le vecteur de groupe séparément.
+  if (item_type == "poly" && meth %in% c("MantelPoly", "Quade", "PolyLogistic")) {
+    grp <- Data$group
+    Data <- Data[, names(Data) != "group", drop = FALSE]
+    common <- list(Data = Data, group = grp, focal.name = 1,
+                   alpha = alpha, purify = purify)
+    minimal <- list(Data = Data, group = grp, focal.name = 1, alpha = alpha)
+  } else {
+    common <- list(Data = Data, group = "group", focal.name = 1,
+                   alpha = alpha, purify = purify)
+    minimal <- list(Data = Data, group = "group", focal.name = 1, alpha = alpha)
+  }
   f <- switch(meth,
               # Méthodes dichotomiques
               MH = function() do.call(difMH, common),
@@ -129,7 +140,14 @@ run_difr_method <- function(meth, Data, alpha, purify, item_type) {
               SIBTEST = function() do.call(difSIBTEST, common),
               Std = function() do.call(difStd, common),
               # Méthodes polytomiques
-              MantelPoly = function() try_call(difMantelPoly, common, minimal),
+              # NB : la fonction difR s'appelle "difMantel.poly" (avec un
+              # point) et sa signature diffère des autres méthodes :
+              # data (minuscule), ref.name requis, sig.level (pas alpha).
+              # D'où un appel dédié, hors du mécanisme try_call générique.
+              MantelPoly = function() difMantel.poly(data = Data, group = grp,
+                                                     focal.name = 1, ref.name = 0,
+                                                     sig.level = alpha,
+                                                     purify = purify),
               # Quade : conçue pour le polytomique, mais offerte aussi en
               # dichotomique à titre didactique (avertissement côté server)
               Quade = function() try_call(difQuade, common, minimal),
@@ -263,9 +281,21 @@ ui <- fluidPage(
                  plotOutput("score_plot"),
                  plotOutput("scatter_plot")
         ),
+        tabPanel(tagList(icon("sliders"), "ICC playground"), value = "playground",
+                 h4("Interactive item characteristic curves"),
+                 uiOutput("play_item_ui"),
+                 uiOutput("play_ui"),
+                 plotOutput("play_plot"),
+                 plotOutput("expected_plot")
+        ),
         tabPanel(tagList(icon("search"), "Detection"), value = "detection",
-                 h4("Method verdicts vs ground truth"),
-                 tableOutput("verdict_table"),
+                 h4("Item classification vs ground truth (TP / FP / TN / FN)"),
+                 tableOutput("class_table"),
+                 h4("Detection accuracy per method"),
+                 tableOutput("metrics_table"),
+                 h4("True DIF parameters vs estimated statistics"),
+                 tableOutput("item_stats"),
+                 h4("Raw summary"),
                  verbatimTextOutput("confusion"),
                  plotOutput("method_plot")
         ),
@@ -501,6 +531,163 @@ server <- function(input, output, session) {
     }
   })
   
+  # --- ICC playground : manipulation interactive de a et b -------------
+  # Sélecteur d'item du playground
+  output$play_item_ui <- renderUI({
+    d <- clean_data()
+    if (!d$simulated) return(NULL)
+    n_items <- nrow(d$params)
+    selectInput("play_item", "Item to explore",
+                choices = 1:n_items, selected = 1)
+  })
+  
+  # Sliders initialisés sur le DIF réel de l'item sélectionné
+  output$play_ui <- renderUI({
+    d <- clean_data()
+    if (!d$simulated) {
+      return(tags$p(style = "color:#666;",
+                    "The playground is only available for simulated data."))
+    }
+    req(input$play_item)
+    i <- as.integer(input$play_item)
+    if (is.na(i) || i < 1 || i > nrow(d$params)) i <- 1
+    p <- d$params[i, ]
+    tagList(
+      fluidRow(
+        column(6, sliderInput("play_b",
+                              "Uniform DIF — shift of b (focal group)",
+                              -2, 2,
+                              round(p$b_foc - p$b_ref, 2), step = 0.1)),
+        column(6, sliderInput("play_a",
+                              "Non-uniform DIF — change in a (focal group)",
+                              -1, 1,
+                              round(p$a_foc - p$a_ref, 2), step = 0.1))
+      ),
+      tags$p(style = "color:#666; font-size:0.85em;",
+             "Solid red = modified focal group (live). Dashed grey = focal group ",
+             "as generated (ground truth). Solid blue = reference group. ",
+             "A b-shift slides the focal curve left/right (uniform DIF); an ",
+             "a-change alters its steepness and can make the curves cross ",
+             "(non-uniform DIF).")
+    )
+  })
+  
+  # Courbes interactives : référence vs focal modifié vs focal réel
+  output$play_plot <- renderPlot({
+    d <- clean_data()
+    if (!d$simulated) return(invisible(NULL))
+    i <- as.integer(input$play_item)
+    if (is.na(i) || i < 1 || i > nrow(d$params)) return(invisible(NULL))
+    p <- d$params[i, ]
+    th <- seq(-4, 4, length.out = 200)
+    db <- if (is.null(input$play_b)) 0 else input$play_b
+    da <- if (is.null(input$play_a)) 0 else input$play_a
+    # Paramètres "joués" : focal modifié = référence + décalages sliders
+    a_mod <- p$a_ref + da
+    b_mod <- p$b_ref + db
+    
+    if (d$item_type == "dicho") {
+      curve_ref  <- plogis(p$a_ref * (th - p$b_ref))
+      curve_foc  <- plogis(p$a_foc * (th - p$b_foc))   # vérité terrain
+      curve_mod  <- plogis(a_mod * (th - b_mod))       # manipulation live
+      matplot(th, cbind(curve_ref, curve_foc, curve_mod),
+              type = "l", lty = c(1, 2, 1), lwd = 2,
+              col = c("steelblue", "grey40", "firebrick"), ylim = c(0, 1),
+              xlab = "Theta (ability)", ylab = "P(correct response)",
+              main = sprintf("%s — 2PL", p$item))
+      abline(v = 0, lty = 3, col = "grey")
+      legend("topleft",
+             c("Reference (solid blue)",
+               "Focal — ground truth (dashed grey)",
+               "Focal — modified (solid red)"),
+             col = c("steelblue", "grey40", "firebrick"),
+             lty = c(1, 2, 1), lwd = 2, bty = "n", cex = 0.85)
+    } else {
+      # GRM : courbes de catégories P(X = k) pour référence vs focal modifié,
+      # plus le score attendu E(X | theta) dans un second graphique
+      steps <- d$steps
+      K <- length(steps) + 1
+      cat_cols <- c("#000000", "#E41A1C", "#4DAF4A", "#377EB8", "#FF7F00", "#984EA3")[1:K]
+      cat_mat <- function(a, b) {
+        cum <- sapply(b + steps, function(bk) plogis(a * (th - bk)))
+        cbind(1 - cum[, 1],
+              if (K > 2) cum[, 1:(K-2)] - cum[, 2:(K-1)] else NULL,
+              cum[, K-1])
+      }
+      cat_ref <- cat_mat(p$a_ref, p$b_ref)
+      cat_mod <- cat_mat(a_mod, b_mod)
+      matplot(th, cat_ref, type = "l", lty = 1, lwd = 2, col = cat_cols,
+              ylim = c(0, 1), xlab = "Theta (ability)", ylab = "Probability",
+              main = sprintf("%s (GRM) — category response curves", p$item))
+      matlines(th, cat_mod, lty = 2, lwd = 2, col = cat_cols)
+      legend("topright",
+             c(paste0("Category ", 0:(K-1)), "",
+               "Reference (solid)", "Focal modified (dashed)"),
+             col = c(cat_cols, "white", "grey40", "grey40"),
+             lty = c(rep(1, K), 0, 1, 2), lwd = 2, bty = "n", cex = 0.8)
+    }
+  })
+  
+  # Score attendu E(X | theta) par groupe (polytomique et dichotomique)
+  output$expected_plot <- renderPlot({
+    d <- clean_data()
+    if (!d$simulated) return(invisible(NULL))
+    i <- as.integer(input$play_item)
+    if (is.na(i) || i < 1 || i > nrow(d$params)) return(invisible(NULL))
+    p <- d$params[i, ]
+    th <- seq(-4, 4, length.out = 200)
+    db <- if (is.null(input$play_b)) 0 else input$play_b
+    da <- if (is.null(input$play_a)) 0 else input$play_a
+    a_mod <- p$a_ref + da
+    b_mod <- p$b_ref + db
+    
+    if (d$item_type == "dicho") {
+      e_ref <- plogis(p$a_ref * (th - p$b_ref))
+      e_foc <- plogis(p$a_foc * (th - p$b_foc))
+      e_mod <- plogis(a_mod * (th - b_mod))
+      matplot(th, cbind(e_ref, e_foc, e_mod), type = "l",
+              lty = c(1, 2, 1), lwd = 2,
+              col = c("steelblue", "grey40", "firebrick"),
+              ylim = c(0, 1), xlab = "Theta (ability)",
+              ylab = "Expected score E(X | theta)",
+              main = sprintf("%s — expected item score", p$item))
+      legend("topleft",
+             c("Reference (solid blue)",
+               "Focal — ground truth (dashed grey)",
+               "Focal — modified (solid red)"),
+             col = c("steelblue", "grey40", "firebrick"),
+             lty = c(1, 2, 1), lwd = 2, bty = "n", cex = 0.85)
+    } else {
+      steps <- d$steps
+      K <- length(steps) + 1
+      cat_mat <- function(a, b) {
+        cum <- sapply(b + steps, function(bk) plogis(a * (th - bk)))
+        cbind(1 - cum[, 1],
+              if (K > 2) cum[, 1:(K-2)] - cum[, 2:(K-1)] else NULL,
+              cum[, K-1])
+      }
+      cat_ref <- cat_mat(p$a_ref, p$b_ref)
+      cat_foc <- cat_mat(p$a_foc, p$b_foc)
+      cat_mod <- cat_mat(a_mod, b_mod)
+      ks <- 0:(K-1)
+      e_ref <- as.vector(cat_ref %*% ks)
+      e_foc <- as.vector(cat_foc %*% ks)
+      e_mod <- as.vector(cat_mod %*% ks)
+      matplot(th, cbind(e_ref, e_foc, e_mod), type = "l",
+              lty = c(1, 2, 1), lwd = 2,
+              col = c("steelblue", "grey40", "firebrick"),
+              ylim = c(0, K - 1), xlab = "Theta (ability)",
+              ylab = "Expected score E(X | theta)",
+              main = sprintf("%s (GRM) — expected item score", p$item))
+      legend("topleft",
+             c("Reference (solid blue)",
+               "Focal — ground truth (dashed grey)",
+               "Focal — modified (solid red)"),
+             col = c("steelblue", "grey40", "firebrick"),
+             lty = c(1, 2, 1), lwd = 2, bty = "n", cex = 0.85)
+    }
+  })
+  
   output$score_plot <- renderPlot({
     d <- clean_data()
     dd <- d$Data
@@ -546,18 +733,110 @@ server <- function(input, output, session) {
   })
   
   # --- Détection ------------------------------------------------------
-  output$verdict_table <- renderTable({
+  # Extraction générique d'un champ numérique par item d'un objet difR
+  pick_field <- function(res, candidates) {
+    for (f in candidates) {
+      v <- tryCatch(res[[f]], error = function(e) NULL)
+      if (!is.null(v) && is.numeric(v) && length(v) > 1) return(v)
+    }
+    NULL
+  }
+  
+  # Classification TP / FP / TN / FN de chaque item pour chaque méthode
+  output$class_table <- renderTable({
     d <- clean_data(); rs <- results()
     n_items <- if (d$simulated) nrow(d$params) else sum(names(d$Data) != "group")
-    verdicts <- lapply(rs, function(r) {
-      flags <- if (inherits(r$res, "error")) NA else get_flags(r$res)
-      ifelse(seq_len(n_items) %in% flags, "DIF", "—")
-    })
-    truth <- if (d$simulated) ifelse(d$params$DIF, "DIF", "—") else rep("?", n_items)
+    seq_i <- seq_len(n_items)
     out <- data.frame(Item = if (d$simulated) d$params$item else paste0("Item", 1:n_items),
-                      Truth = truth, stringsAsFactors = FALSE)
-    for (k in seq_along(rs)) out[[rs[[k]]$method]] <- verdicts[[k]]
+                      Truth = if (d$simulated) ifelse(d$params$DIF, "DIF", "—") else "?",
+                      stringsAsFactors = FALSE)
+    for (r in rs) {
+      if (inherits(r$res, "error")) {
+        out[[r$method]] <- "ERROR"
+      } else {
+        flags <- get_flags(r$res)
+        flagged <- seq_i %in% flags
+        if (d$simulated) {
+          trued <- d$params$DIF
+          cls <- ifelse(flagged & trued, "TP",
+                        ifelse(flagged & !trued, "FP",
+                               ifelse(!flagged & trued, "FN", "TN")))
+          # Marquage lisible : TP/FP = signalé, FN/TN = non signalé.
+          # FP et FN sont les erreurs : suffixe "!" pour les repérer.
+          out[[r$method]] <- paste0(ifelse(flagged, "DIF", "—"), " (", cls,
+                                    ifelse(cls %in% c("FP", "FN"), "!", ""), ")")
+        } else {
+          out[[r$method]] <- ifelse(flagged, "DIF", "—")
+        }
+      }
+    }
     out
+  }, rownames = FALSE)
+  
+  # Métriques de détection par méthode : sensibilité, spécificité, FPR
+  output$metrics_table <- renderTable({
+    d <- clean_data(); rs <- results()
+    if (!d$simulated) return(NULL)
+    n_items <- nrow(d$params)
+    true_dif <- which(d$params$DIF)
+    do.call(rbind, lapply(rs, function(r) {
+      if (inherits(r$res, "error")) {
+        return(data.frame(Method = paste0(r$method, " (error)"),
+                          TP = NA, FP = NA, TN = NA, FN = NA,
+                          Sensitivity = NA, Specificity = NA,
+                          `False-positive rate` = NA, check.names = FALSE))
+      }
+      flags <- get_flags(r$res)
+      tp <- sum(true_dif %in% flags)
+      fp <- sum(!(flags %in% true_dif))
+      fn <- sum(!(true_dif %in% flags))
+      tn <- n_items - tp - fp - fn
+      data.frame(
+        Method = r$method, TP = tp, FP = fp, TN = tn, FN = fn,
+        Sensitivity = if (tp + fn > 0) round(tp / (tp + fn), 2) else NA,
+        Specificity = if (tn + fp > 0) round(tn / (tn + fp), 2) else NA,
+        `False-positive rate` = if (tn + fp > 0) round(fp / (tn + fp), 2) else NA,
+        check.names = FALSE)
+    }))
+  }, rownames = FALSE)
+  
+  # Vrais paramètres de DIF vs statistique estimée et p-valeur par item
+  output$item_stats <- renderTable({
+    d <- clean_data(); rs <- results()
+    if (!d$simulated) return(NULL)
+    p <- d$params
+    # Une ligne par (méthode x item) : on garde les méthodes dont on
+    # sait extraire une statistique numérique par item
+    st <- lapply(rs, function(r) {
+      if (inherits(r$res, "error")) return(NULL)
+      # Candidats couvrant les deux familles de méthodes :
+      # - MH : MHChIq / pvalue / alphaMH
+      # - MantelPoly : Stat / p.value / Psi_hat (tailles d'effet GRM)
+      # - Logistic : stat / pvalue
+      s <- pick_field(r$res, c("stat", "Stat", "MHChIq", "RajuZ"))
+      if (is.null(s)) return(NULL)
+      list(method = r$method, stat = s,
+           pv = pick_field(r$res, c("pvalue", "p.value", "pval")),
+           eff = pick_field(r$res, c("alphaMH", "Psi_hat", "Alpha_hat",
+                                     "RajuZ", "R2M0")))
+    })
+    st <- Filter(Negate(is.null), st)
+    if (length(st) == 0) {
+      return(data.frame(Message = paste(
+        "No per-item statistic available for the selected methods.",
+        "See the 'Detailed outputs' tab for their raw output.")))
+    }
+    do.call(rbind, lapply(st, function(s) {
+      data.frame(
+        Method = s$method, Item = p$item,
+        Truth = ifelse(p$DIF, "DIF", "—"),
+        `Δb (true)` = round(p$b_foc - p$b_ref, 2),
+        `Δa (true)` = round(p$a_foc - p$a_ref, 2),
+        Statistic = round(s$stat, 3),
+        `Effect size` = if (!is.null(s$eff)) round(s$eff, 3) else NA,
+        `p-value` = if (!is.null(s$pv)) signif(s$pv, 3) else NA,
+        check.names = FALSE)
+    }))
   }, rownames = FALSE)
   
   output$confusion <- renderText({
