@@ -1,12 +1,13 @@
+options(repos = c(CRAN = "https://packagemanager.posit.co/cran/__linux__/jammy/latest"))
+
 if (!requireNamespace("difR", quietly = TRUE) ||
     packageVersion("difR") < "6.1.0")
   install.packages("difR")
 
-# VGAM : requis par difPolyLogistic (vglm)
+# VGAM : requis par difPolyLogistic (vglm) — installation binaire rapide
 if (!requireNamespace("VGAM", quietly = TRUE))
   install.packages("VGAM")
 
-# ltm : requis par Lord et Raju
 if (!requireNamespace("ltm", quietly = TRUE))
   install.packages("ltm")
 
