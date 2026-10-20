@@ -12,7 +12,7 @@ The project is developed in collaboration with the team behind [Shiny Item Analy
 
 There are two ways to use the app.
 
-#### Option 1 — Use the online version (no installation)
+### Option 1 — Use the online version (no installation)
 
 Simply visit the hosted version on the Posit Cloud:
 
@@ -20,7 +20,7 @@ Simply visit the hosted version on the Posit Cloud:
 
 Nothing to install — the app runs in your browser and is always up to date with the latest version deployed from the GitHub repository. This is the recommended option for students and occasional users.
 
-#### Option 2 — Run it locally from GitHub
+### Option 2 — Run it locally from GitHub
 
 If you prefer to run the app on your own machine (e.g. for teaching offline, or to explore and modify the code):
 
