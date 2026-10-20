@@ -16,6 +16,7 @@ Two types of DIF:
 
 - **Uniform DIF**: the difference between groups is constant across ability levels. In practice, the item is systematically easier for one group. Formally: a shift in the difficulty parameter *b*.
 - **Non-uniform DIF**: the difference changes with ability — the item may even favour the reference group at low ability and the focal group at high ability. Formally: a change in the discrimination parameter *a*.
+
 The distinction matters because some methods (e.g. MH) mostly detect uniform DIF, while others (e.g. logistic regression, Lord, Raju) can detect both.
 
 ## Data sources
@@ -131,4 +132,4 @@ Or, in BibTeX format:
 
 ---
 
-(c) 2026 Émile Caron, Sébastien Béland and Adéla Hladkà. This app is released under the [WTFPL license](https://www.wtfpl.net/).
+(c) 2026 Émile Caron, Sébastien Béland and Adéla Hladká. This app is released under the [WTFPL license](https://www.wtfpl.net/).
