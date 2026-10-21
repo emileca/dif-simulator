@@ -133,11 +133,13 @@ respondents can be randomly split into two groups.
 
 ## Further reading
 
-- Drabinová, A., & Martinková, P. (2018). Detection of differential item functioning with nonlinear regression: Non-IRT approach differs from logistic regression. *Acta Polytechnica*, 58, 208–215. 
-- Kim, S.-H., Cohen, A. S., & Park, T.-H. (1995). Detection of differential item functioning in multiple groups. *Journal of Educational Measurement*, 32, 261–276.
-- Magis, D., Béland, S., & Raiche, G. (2015). Essentials to know and practise about DIF: A multi-step approach. *Tutorials in Quantitative Methods for Psychology*, 11, 157–166.
-- Magis, D., Béland, S., Tuerlinckx, F., & De Boeck, P. (2010). A general framework and an R package for the detection of dichotomous differential item functioning. *Behavior Research Methods*, 42, 847–862. doi:10.3758/BRM.42.3.847  
-- Magis, D., Raiche, G., Béland, S., & Gérard, P. (2011). A generalized logistic regression procedure to detect differential item functioning among multiple groups. *Journal of Educational and Behavioral Statistics*, 36, 525–552.
+- Kim, S.-H., Cohen, A. S., & Park, T.-H. (1995). Detection of differential item functioning in multiple groups. *Journal of Educational Measurement*, 32, 261–276. [doi:10.1111/j.1745-3984.1995.tb00466.x](https://doi.org/10.1111/j.1745-3984.1995.tb00466.x)
+
+- Magis, D., Béland, S., Tuerlinckx, F., & De Boeck, P. (2010). A general framework and an R package for the detection of dichotomous differential item functioning. *Behavior Research Methods*, 42, 847–862. [doi:10.3758/BRM.42.3.847](https://link.springer.com/article/10.3758/BRM.42.3.847)
+
+- Magis, D., Raiche, G., Béland, S., & Gérard, P. (2011). A generalized logistic regression procedure to detect differential item functioning among multiple groups. *International Journal of Testing*, 11, 365–386. [doi:10.1080/15305058.2011.602810](https://doi.org/10.1080/15305058.2011.602810)
+
+- Martinková, P., & Drabinová, A. (2018). ShinyItemAnalysis for teaching psychometrics and to enforce routine analysis of educational tests. *The R Journal*, 10(2), 503–515. [doi:10.32614/RJ-2018-074](https://doi.org/10.32614/RJ-2018-074)
 
 ## Cite this project
 
@@ -158,6 +160,11 @@ Or, in BibTeX format:
   note         = {Shiny application}
 }
 ```
+
+## Declaration of AI use
+
+This application and its documentation were developed with the assistance of AI tools (Vibe, powered by GLM from [Mistral AI](https://mistral.ai/fr/)), used for code writing,
+refactoring, debugging, and drafting documentation. All generated content was reviewed, tested, and validated by the authors, who remain responsible for the final product.
 
 ---
 
