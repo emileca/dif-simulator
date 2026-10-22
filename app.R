@@ -313,6 +313,12 @@ ui <- fluidPage(
         ),
         tabPanel(tagList(icon("search"), "Detection"), value = "detection",
                  h4("Item classification vs ground truth (TP / FP / TN / FN)"),
+                 tags$p(style = "color:#666; font-size:0.85em; margin-top:-0.5em;",
+                        tags$b("TP"), " (true positive): the item has DIF and is correctly flagged. ",
+                        tags$b("FP"), " (false positive): the item is flagged but has no DIF (false alarm). ",
+                        tags$b("FN"), " (false negative): the item has DIF but is missed by the method. ",
+                        tags$b("TN"), " (true negative): the item has no DIF and is correctly not flagged. ",
+                        "An exclamation mark (", tags$b("!"), ") marks the two error types (FP, FN)."),
                  tableOutput("class_table"),
                  h4("Detection accuracy per method"),
                  tableOutput("metrics_table"),
@@ -519,8 +525,9 @@ server <- function(input, output, session) {
               main = sprintf("%s — %s", p$item,
                              if (p$DIF) paste("item with DIF (", p$type, ")") else "item without DIF"))
       abline(v = 0, lty = 3, col = "grey")
-      legend("topleft", c("Reference group", "Focal group"),
-             col = c("steelblue", "firebrick"), lwd = 2, bty = "n")
+      legend("topleft", legend = c("Reference group", "Focal group"),
+             col = c("steelblue", "firebrick"), lwd = 2, cex = 0.9,
+             bg = "white", bty = "o", box.col = "grey60")
     } else {
       # GRM : toutes les courbes dans un seul graphique
       # Couleur = catégorie (comme plot(grm) de ltm), style = groupe
@@ -545,12 +552,16 @@ server <- function(input, output, session) {
                              if (p$DIF) paste("item with DIF (", p$type, ")") else "item without DIF"))
       matlines(th, cat_foc, lty = 2, lwd = 2, col = cat_cols)
       # Légende : catégories en couleur + groupes en style de trait
+      # Légende avec fond blanc : les courbes GRM passent derrière,
+      # le texte reste lisible. NB : bty="o" + bordure grise visible
+      # = témoin de diagnostic pour vérifier que cette version du code
+      # est bien celle qui s'exécute (retirez box.col une fois confirmé).
       legend("topright",
-             c(paste0("Category ", 0:(K-1)), "",
-               "Reference (solid)", "Focal (dashed)"),
+             legend = c(paste0("Category ", 0:(K-1)), "",
+                        "Reference (solid)", "Focal (dashed)"),
              col = c(cat_cols, "white", "grey40", "grey40"),
-             lty = c(rep(1, K), 0, 1, 2), lwd = 2, bty = "n", cex = 0.85,
-             seg.len = 2.5)
+             lty = c(rep(1, K), 0, 1, 2), lwd = 2, cex = 0.85,
+             seg.len = 2.5, bg = "white", bty = "o", box.col = "grey60")
     }
   })
   
@@ -625,11 +636,12 @@ server <- function(input, output, session) {
               main = sprintf("%s — 2PL", p$item))
       abline(v = 0, lty = 3, col = "grey")
       legend("topleft",
-             c("Reference (solid blue)",
-               "Focal — ground truth (dashed grey)",
-               "Focal — modified (solid red)"),
+             legend = c("Reference (solid blue)",
+                        "Focal — ground truth (dashed grey)",
+                        "Focal — modified (solid red)"),
              col = c("steelblue", "grey40", "firebrick"),
-             lty = c(1, 2, 1), lwd = 2, bty = "n", cex = 0.85)
+             lty = c(1, 2, 1), lwd = 2, cex = 0.85,
+             bg = "white", bty = "o", box.col = "grey60")
     } else {
       # GRM : courbes de catégories P(X = k) pour référence vs focal modifié,
       # plus le score attendu E(X | theta) dans un second graphique
@@ -649,10 +661,11 @@ server <- function(input, output, session) {
               main = sprintf("%s (GRM) — category response curves", p$item))
       matlines(th, cat_mod, lty = 2, lwd = 2, col = cat_cols)
       legend("topright",
-             c(paste0("Category ", 0:(K-1)), "",
-               "Reference (solid)", "Focal modified (dashed)"),
+             legend = c(paste0("Category ", 0:(K-1)), "",
+                        "Reference (solid)", "Focal modified (dashed)"),
              col = c(cat_cols, "white", "grey40", "grey40"),
-             lty = c(rep(1, K), 0, 1, 2), lwd = 2, bty = "n", cex = 0.8)
+             lty = c(rep(1, K), 0, 1, 2), lwd = 2, cex = 0.8,
+             bg = "white", bty = "o", box.col = "grey60")
     }
   })
   
@@ -680,11 +693,12 @@ server <- function(input, output, session) {
               ylab = "Expected score E(X | theta)",
               main = sprintf("%s — expected item score", p$item))
       legend("topleft",
-             c("Reference (solid blue)",
-               "Focal — ground truth (dashed grey)",
-               "Focal — modified (solid red)"),
+             legend = c("Reference (solid blue)",
+                        "Focal — ground truth (dashed grey)",
+                        "Focal — modified (solid red)"),
              col = c("steelblue", "grey40", "firebrick"),
-             lty = c(1, 2, 1), lwd = 2, bty = "n", cex = 0.85)
+             lty = c(1, 2, 1), lwd = 2, cex = 0.85,
+             bg = "white", bty = "o", box.col = "grey60")
     } else {
       steps <- d$steps
       K <- length(steps) + 1
@@ -708,11 +722,12 @@ server <- function(input, output, session) {
               ylab = "Expected score E(X | theta)",
               main = sprintf("%s (GRM) — expected item score", p$item))
       legend("topleft",
-             c("Reference (solid blue)",
-               "Focal — ground truth (dashed grey)",
-               "Focal — modified (solid red)"),
+             legend = c("Reference (solid blue)",
+                        "Focal — ground truth (dashed grey)",
+                        "Focal — modified (solid red)"),
              col = c("steelblue", "grey40", "firebrick"),
-             lty = c(1, 2, 1), lwd = 2, bty = "n", cex = 0.85)
+             lty = c(1, 2, 1), lwd = 2, cex = 0.85,
+             bg = "white", bty = "o", box.col = "grey60")
     }
   })
   
@@ -729,9 +744,10 @@ server <- function(input, output, session) {
          xlab = "Total score")
     lines(density(sc_foc), col = "firebrick", lwd = 2)
     legend("topright",
-           c(sprintf("Reference (mean %.1f)", mean(sc_ref)),
-             sprintf("Focal (mean %.1f)", mean(sc_foc))),
-           col = c("steelblue", "firebrick"), lwd = 2, bty = "n")
+           legend = c(sprintf("Reference (mean %.1f)", mean(sc_ref)),
+                      sprintf("Focal (mean %.1f)", mean(sc_foc))),
+           col = c("steelblue", "firebrick"), lwd = 2,
+           bg = "white", bty = "o", box.col = "grey60")
   })
   
   # Nuage de points : score moyen par item, groupe focal vs référence
@@ -756,8 +772,9 @@ server <- function(input, output, session) {
     abline(0, 1, lty = 2, col = "grey60")
     text(m_ref, m_foc, labels = seq_along(items), pos = 4, cex = 0.7, col = col)
     legend("bottomright",
-           c("Not flagged", "Flagged as DIF"),
-           col = c("steelblue", "firebrick"), pch = 19, bty = "n")
+           legend = c("Not flagged", "Flagged as DIF"),
+           col = c("steelblue", "firebrick"), pch = 19,
+           bg = "white", bty = "o", box.col = "grey60")
   })
   
   # --- Détection ------------------------------------------------------
